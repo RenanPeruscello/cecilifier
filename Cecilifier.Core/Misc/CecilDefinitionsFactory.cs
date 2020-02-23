@@ -177,6 +177,28 @@ namespace Cecilifier.Core.Misc
 
             string CustomAttributeArgument(TypeInfo argType, AttributeArgumentSyntax attrArg)
             {
+                // ExpressionVisitor.Visit(context, "?", attrArg.Expression);
+                //TODO: we cannot assume the argument is a constant. At least arrays are accepted also. Any other type?
+                var type = context.SemanticModel.GetTypeInfo(attrArg.Expression);
+                
+                if (type.Type != null && type.Type.TypeKind == TypeKind.Array)
+                {
+                    var value = @"new []
+                                    {
+                                        new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, 7),
+                                        new CustomAttributeArgument(assembly.MainModule.TypeSystem.Int32, 6),
+                                    }";
+                    return $"new CustomAttributeArgument(assembly.MainModule.ImportReference(typeof({argType.Type.FullyQualifiedName()})), {value})";
+                    // new[]
+                    // {
+                    //new CustomAttributeArgument(int32Ref, 1),
+                    //new CustomAttributeArgument(stringRef, "2"),
+                    //new CustomAttributeArgument(assembly.MainModule.TypeSystem.Object, new CustomAttributeArgument(assembly.MainModule.TypeSystem.Boolean, true)),
+                    //new CustomAttributeArgument(assembly.MainModule.TypeSystem.Object, new CustomAttributeArgument(assembly.MainModule.TypeSystem.String, "Foo")),
+
+                    //  }
+
+                }
                 return $"new CustomAttributeArgument(assembly.MainModule.ImportReference(typeof({argType.Type.FullyQualifiedName()})), {attrArg.Expression.EvaluateConstantExpression(context.SemanticModel)})";
             }
         }
